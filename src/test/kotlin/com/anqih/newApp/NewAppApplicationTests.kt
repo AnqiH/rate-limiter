@@ -15,7 +15,9 @@ import org.springframework.http.HttpStatus
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class NewAppApplicationTests(@Autowired val restTemplate: TestRestTemplate) {
-	private val MILLISECONDS = 3600000
+	companion object {
+		const val MILLISECONDS = 3600000 // CONSTANT milliseconds in an hour
+	}
 	private val refillRate = 100
 	private var lastRefillTime = System.currentTimeMillis()
 	@Test
@@ -40,18 +42,18 @@ class NewAppApplicationTests(@Autowired val restTemplate: TestRestTemplate) {
 	}
 
 	/*
-	* After the available requests are used up, the new requests
-	* should return 429. The specified rate at which requests can
+	* After the request capacity is used up, the new requests
+	* should return 429. The rate at which requests can
 	* be made is 100 request/hr.
 	* Calculate the waiting time for the new token, and compare
-	* if it is the same time with the 429 message.
+	* if it is the same with the time 429 message.
 	* */
 	@Test
 	@Order(2)
 	fun `request exceeding capacity, return 429 response and waiting time`(){
 		val nextRefill = lastRefillTime + MILLISECONDS/refillRate
 		val waitTime = (nextRefill-System.currentTimeMillis())/1000
-		var response = restTemplate.getForEntity<String>("/")
+		val response = restTemplate.getForEntity<String>("/")
 		assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.statusCode)
 		assertThat(response.body).contains(waitTime.toString())
 	}
@@ -64,7 +66,7 @@ class NewAppApplicationTests(@Autowired val restTemplate: TestRestTemplate) {
 	fun `request again when token bucket has been refilled, return 200`(){
 		val nextRefill = lastRefillTime + MILLISECONDS/refillRate
 		while(System.currentTimeMillis()<nextRefill){}
-		var response = restTemplate.getForEntity<String>("/")
+		val response = restTemplate.getForEntity<String>("/")
 		assertEquals(HttpStatus.OK, response.statusCode)
 	}
 

@@ -15,31 +15,34 @@ class BasicController {
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
     /*
-    * The cache stores the remaining teokens and the last request time
+    * The cache stores the remaining tokens and the last request time
     * for each user
     * */
-    private var cache = HashMap<String, Token>()
+    private val cache = HashMap<String, Token>()
 
     /*
-    * Create a rate limiter instance with a capacity of 5 tokens(requests)
-    * After the requests are used up, new tokens are refilled at rate
+    * Create a rate limiter with a capacity of 5 tokens(requests)
+    * After the capacity is used up, new tokens are refilled at rate
     * 100 requests per hour
     * */
-    val tbRateLimiter = TokenBucketRateLimiter(5,100)
+    val tbRateLimiter = TokenBucketRateLimiter(5,100,cache)
 
     @RequestMapping("/")
     fun index(request: HttpServletRequest): ResponseEntity<String>{
 
-        // The client IP address is used as user ID
+        // The client IP address is used as user ID for now
         val ipAddr = request.remoteAddr
 
-        if(tbRateLimiter.allowRequest(1, ipAddr, cache)){
+        if(tbRateLimiter.allowRequest(1, ipAddr)){
             return ResponseEntity.ok("Hello World\n")
         }
-        val waitTime = tbRateLimiter.waitTime(ipAddr, cache)
+
+        // If allowRequest() returns false, get the waiting
+        // time until the next allowable request and return 429
+        val waitTime = tbRateLimiter.waitTime(ipAddr)
         return ResponseEntity
-            .status(HttpStatus.TOO_MANY_REQUESTS)
-            .body("Rate limit exceeded. Try again in $waitTime seconds\n")
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body("Rate limit exceeded. Try again in $waitTime seconds\n")
     }
 
 }
