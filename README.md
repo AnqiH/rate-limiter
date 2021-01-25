@@ -12,7 +12,7 @@ Spring Boot 2.4.2
 Gradle 6.7.1
 
 ## How to run  
----
+
 **Clone the repo**  
 `git clone https://github.com/AnqiH/rate-limiter.git`  
 `cd rate-limiter`  
